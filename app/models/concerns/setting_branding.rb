@@ -7,7 +7,7 @@ module SettingBranding
     end
 
     def [](name)
-      if UpstreamOnlySettings::SETTINGS.include?(name.to_s)
+      if UpstreamOnlySettings.include?(name.to_s)
         Rails.logger.debug "Setting '#{name}' is not available in Satellite; ignoring"
         return nil
       end

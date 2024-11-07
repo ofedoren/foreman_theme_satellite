@@ -1,6 +1,7 @@
 require 'test_plugin_helper'
 
 class SettingRegistryBrandingTest < ActiveSupport::TestCase
+  # rubocop:disable Metrics/BlockLength
   describe 'stubbed creation' do
     test 'it replaces value to a branded one using DSL' do
       Setting.where(name: 'dsl_setting').delete_all
@@ -27,14 +28,29 @@ class SettingRegistryBrandingTest < ActiveSupport::TestCase
     end
 
     test 'hides upstream-only settings' do
-      assert_nil Setting['allow_multiple_content_views']
+      Foreman::SettingManager.define('test2') do
+        category(:Content) do
+          setting(
+            :test_setting,
+            description: N_("Upstream-only setting test"),
+            default: 'definitely not falsey',
+            full_name: N_('Upstream-only setting test'),
+            type: :string
+          )
+        end
+      end
+      Foreman.settings.load
+      UpstreamOnlySettings.expects(:include?).with('test_setting').returns(true)
+      assert_nil Setting['test_setting']
     end
   end
+  # rubocop:enable Metrics/BlockLength
 end
 
 class SettingBrandingTest < ActiveSupport::TestCase
   test 'replaces warning for upstream-only settings' do
-    Rails.logger.expects(:debug).with('Setting \'allow_multiple_content_views\' is not available in Satellite; ignoring')
-    Setting['allow_multiple_content_views']
+    UpstreamOnlySettings.expects(:include?).with('test_setting').returns(true)
+    Rails.logger.expects(:debug).with('Setting \'test_setting\' is not available in Satellite; ignoring')
+    Setting['test_setting']
   end
 end
